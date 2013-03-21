@@ -29,6 +29,7 @@ my $profile_name       = "";    # profile name of this execution
 my $profile_content    = "";    # the actual name and filter of the profile
 my $current_package    = "";    # package name of current run
 my $current_run_number = 0;     # how many cases has run for the running pacakge
+my $deviceid    = ""; 
 
 sub BEGIN {
 
@@ -951,10 +952,9 @@ sub getBackupResultXMLCMD {
 sub syncLiteResult {
 	my $result_dir_lite = $FindBin::Bin . "/../../lite";
 	system("rm -rf $result_dir_lite/*");
-	system(
-		sdb_cmd("shell 'cd /opt/testkit/lite; tar -czvf /tmp/lite.tar.gz .'") );
-	system( sdb_cmd("pull /tmp/lite.tar.gz $result_dir_lite") );
-	system( sdb_cmd("shell rm -rf /tmp/lite.tar.gz") );
+	system("cd /opt/testkit/lite; tar -czvf /tmp/lite.tar.gz .");
+	system("cp /tmp/lite.tar.gz $result_dir_lite");
+	system("rm -rf /tmp/lite.tar.gz");
 	system("cd $result_dir_lite;tar -xzvf lite.tar.gz");
 	system("rm -rf $result_dir_lite/lite.tar.gz");
 }
@@ -978,6 +978,7 @@ sub syncLiteResult {
 	# Run the test in ptyshell
 	$profile_content = &readProfile( $globals->{'testkit_dir'} . "/plans" );
 	$profile_content =~ s/\s*$//;
+    $deviceid  = shell_cmd();
 	if (   ( $profile_content !~ /usr\/share/ )
 		&& ( $profile_content !~ /tmp\/rerun/ ) )
 	{
@@ -990,15 +991,17 @@ sub syncLiteResult {
 	else {
 		if ( $isWebApi eq "False" ) {
 			inform "[CMD]:\n"
-			  . sdb_cmd("shell 'testkit-lite -f ")
+			  . "testkit-lite -f "
 			  . $profile_content
-			  . " --non-active --enable-memory-collection'\n";
+			  . shell_cmd()
+			  . " --non-active --enable-memory-collection\n";
 		}
 		else {
 			inform "[CMD]:\n"
-			  . sdb_cmd("shell 'testkit-lite -f ")
+			  . "testkit-lite -f "
 			  . $profile_content
-			  . " --non-active --enable-memory-collection'\n";
+			  . shell_cmd()
+			  . " --non-active --enable-memory-collection\n";
 		}
 	}
 	if (   ( $profile_content =~ /usr\/share/ )
@@ -1026,11 +1029,11 @@ sub syncLiteResult {
 
 		# start testing
 		write_string_as_file( "$globals->{'temp_dir'}/lite-command",
-"testkit-lite -f $profile_content --non-active --enable-memory-collection"
+"testkit-lite -f $profile_content --non-active --enable-memory-collection $deviceid "
 		);
-		system( sdb_cmd("push $globals->{'temp_dir'}/lite-command /tmp") );
-		system( sdb_cmd("shell 'chmod 755 /tmp/lite-command'") );
-		$subshell->Spawn( sdb_cmd("shell 'sh /tmp/lite-command'") );
+		system( "mv $globals->{'temp_dir'}/lite-command /tmp" );
+		system( 'chmod 755 /tmp/lite-command');
+		$subshell->Spawn( 'sh /tmp/lite-command');
 	}
 	else {
 		$subshell->Spawn("echo 'Missing package(s) found, exit...'; sleep 10");

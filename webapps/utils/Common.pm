@@ -46,6 +46,7 @@ our @EXPORT = qw(
 	$last_cmd_output &last_line
 	&complain &debug_inform &fail &inform &warning &capture &cmd
 	&sleep_ms &check_sdb_device &sdb_cmd &get_serial &set_serial &get_config_info
+	&shell_cmd
 );
 
 push @EXPORT, @Error::EXPORT;
@@ -97,6 +98,17 @@ sub sdb_cmd {
 	}
 	else {
 		$whole_cmd = "sdb -s " . $sdb_serial . " " . $cmd_content;
+	}
+	return $whole_cmd;
+}
+sub shell_cmd {
+	my $sdb_serial    = get_serial();
+	my $whole_cmd     = "";
+	if ( ( $sdb_serial eq "none" ) or ( $sdb_serial eq "Error" ) ) {
+		$whole_cmd = "";
+	}
+	else {
+		$whole_cmd = " --deviceid " . $sdb_serial;
 	}
 	return $whole_cmd;
 }

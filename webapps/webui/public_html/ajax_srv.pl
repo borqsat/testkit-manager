@@ -1927,17 +1927,11 @@ elsif ( $_GET{'action'} eq 'rerun_test_plan' ) {
 			write_string_as_file(
 				$SERVER_PARAM{'APP_DATA'} . '/plans/' . $plan_name,
 				$plan_content );
-			system( sdb_cmd("shell 'rm -rf /tmp/rerun'") );
-			system( sdb_cmd("shell 'mkdir /tmp/rerun'") );
+			system( "rm -rf /tmp/rerun" );
+			system( "mkdir /tmp/rerun" );
 			foreach my $package_name ( keys %package_xml_file ) {
-				system(
-					sdb_cmd( "shell 'mkdir /tmp/rerun/" . $package_name . "'" )
-				);
-				system(
-					sdb_cmd(
-"push $package_xml_file{$package_name} /tmp/rerun/$package_name/tests.xml"
-					)
-				);
+				system("mkdir /tmp/rerun/" . $package_name );
+				system("cp $package_xml_file{$package_name} /tmp/rerun/$package_name/tests.xml");
 			}
 			$data .= "<rerun_test_plan>$plan_name</rerun_test_plan>\n";
 		}
@@ -2018,9 +2012,13 @@ elsif ( $_GET{'action'} eq 'stop_tests' ) {    # Stop the tests
 				if ( $status->{'IS_RUNNING'} ) {
 					if ( kill( 'TERM', $status->{'PID'} ) ) {
 						while (1) {
+							#kill httpserver
 							my $kill_result_tmp =
-							  sdb_cmd("shell killall testkit-lite");
+							  sdb_cmd("shell killall httpserver");
 							my $kill_result = `$kill_result_tmp`;
+							# kill  testkitlite
+							$tmp_kill = "kill -9 `ps ax| grep /usr/bin/testkit-lite | grep -v 'grep' | awk '{print $1}'`";
+							$tmp_kill_result = `$tmp_kill`;
 							if ( $kill_result =~ /no process/ ) {
 								last;
 							}
